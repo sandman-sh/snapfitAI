@@ -233,7 +233,7 @@ function findMatchingProducts(vision) {
     const queryTokens = tokenize(query);
     const productTokens = tokenize(productText);
     const score = queryTokens.reduce((sum, token) => (
-      productTokens.has(token) ? sum + token.length : sum
+      productTokens.includes(token) ? sum + token.length : sum
     ), 0);
 
     const categoryScore = product.category.toLowerCase() === vision.garmentCategory.toLowerCase() ? 15 : 0;
@@ -246,12 +246,14 @@ function findMatchingProducts(vision) {
 }
 
 function tokenize(text) {
-  return new Set(
-    String(text)
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
-      .split(/\s+/)
-      .filter((token) => token.length > 2)
+  return Array.from(
+    new Set(
+      String(text)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter((token) => token.length > 2)
+    )
   );
 }
 
