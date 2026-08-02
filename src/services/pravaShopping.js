@@ -1,10 +1,18 @@
-import { createPravaSession, pollPaymentResult, reportPravaStatus } from "./pravaApi";
+import { createPravaSession, pollUntilComplete, reportPravaStatus } from "./pravaApi";
 
 /**
  * SnapFit AI — Prava Agentic Commerce Pipeline
  * Full live integration with Prava REST API (https://sandbox.api.prava.space)
+ *
+ * Flow:
+ *   1. executeSnapFitPravaCheckout  → creates session, returns iframe URL
+ *   2. (User completes card entry + passkey in iframe)
+ *   3. awaitAndFinalizeCheckout     → polls until real completion, reports status
  */
 
+/**
+ * Step 1: Create Prava session & log the quote
+ */
 export async function executeSnapFitPravaCheckout({
   product,
   selectedSize = "M",
@@ -62,7 +70,7 @@ export async function executeSnapFitPravaCheckout({
     id: `log_${Date.now()}_created`,
     time: new Date().toLocaleTimeString(),
     title: `Prava Session Created (${sessionId})`,
-    details: `Registered on Prava Dashboard | Order ID: ${sessionData.order_id || 'ord_live'}`,
+    details: `Registered on Prava Dashboard | Order ID: ${sessionData.order_id || 'pending'}`,
     status: "SESSION_ACTIVE",
     badge: "PRAVA_LIVE"
   });
@@ -76,51 +84,82 @@ export async function executeSnapFitPravaCheckout({
     sessionToken: sessionData.session_token,
     iframeUrl: sessionData.iframe_url || sessionData.paymentUrl,
     orderId: sessionData.order_id,
-    responseId: sessionRes.responseId
   };
 }
 
 /**
- * Step 3: Complete Prava shop_checkout upon Passkey Approval & Token Generation
+ * Step 3: Poll for real payment completion and report status.
+ * Returns the real order result with actual network token & CVV.
+ *
+ * @param {Object} checkoutContext - from executeSnapFitPravaCheckout
+ * @param {Object} options
+ * @param {function} [options.logCallback] - log events to TransactionLedger
+ * @param {function} [options.onPollUpdate] - called each poll with (data, attempt)
+ * @param {AbortSignal} [options.signal] - to cancel polling
  */
-export async function finalizeSnapFitCheckout(checkoutContext, logCallback = () => {}) {
-  const { product, selectedSize, sessionId, responseId } = checkoutContext;
-  const timestamp = new Date().toLocaleTimeString();
+export async function awaitAndFinalizeCheckout(checkoutContext, {
+  logCallback = () => {},
+  onPollUpdate = null,
+  signal = null,
+} = {}) {
+  const { product, selectedSize, sessionId } = checkoutContext;
   const productName = product.name || product.title || "Apparel Item";
   const productPrice = product.price || 9999;
   const merchant = product.merchantDomain || "myntra.com";
 
-  // Step 3a: Poll for token result from Prava API
-  let paymentResult = null;
-  try {
-    const pollRes = await pollPaymentResult(sessionId);
-    if (pollRes.success && pollRes.data) {
-      paymentResult = pollRes.data;
-    }
-  } catch (err) {
-    console.warn("Prava token poll warning:", err);
+  logCallback({
+    id: `log_${Date.now()}_polling`,
+    time: new Date().toLocaleTimeString(),
+    title: `Polling Prava for Payment Completion`,
+    details: `Waiting for card enrollment + passkey verification on session ${sessionId}`,
+    status: "POLLING",
+    badge: "AWAITING_RESULT"
+  });
+
+  // Poll until Prava returns completed or failed
+  const paymentResult = await pollUntilComplete(sessionId, {
+    maxAttempts: 30,
+    intervalMs: 3000,
+    onPoll: onPollUpdate,
+    signal,
+  });
+
+  // Extract the REAL payment credential from Prava
+  const transaction = paymentResult.transactions?.[0];
+  const lineItem = transaction?.line_items?.[0];
+
+  if (!lineItem) {
+    throw new Error("Payment completed but no line item found in response");
   }
 
-  const lineItem = paymentResult?.transactions?.[0]?.line_items?.[0] || {};
-  const mockToken = lineItem.token || `4622-9431-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`;
-  const mockCvv = lineItem.dynamic_cvv || `894`;
-  const txnRefId = lineItem.txn_ref_id || `txref_${Date.now()}`;
-  const orderId = checkoutContext.orderId || `ORD_SNAP_${Math.floor(100000 + Math.random() * 900000)}`;
+  const realToken = lineItem.token;
+  const realCvv = lineItem.dynamic_cvv;
+  const realExpiryMonth = lineItem.expiry_month;
+  const realExpiryYear = lineItem.expiry_year;
+  const txnRefId = lineItem.txn_ref_id;
+  const orderId = checkoutContext.orderId || paymentResult.order_id || `ORD_${sessionId}`;
 
-  // Step 3b: Safely report status to Prava network
+  // Report APPROVED status to Prava with the REAL txn_ref_id
   try {
     await reportPravaStatus(sessionId, txnRefId, "APPROVED");
+    logCallback({
+      id: `log_${Date.now()}_reported`,
+      time: new Date().toLocaleTimeString(),
+      title: `Status Reported to Prava (APPROVED)`,
+      details: `txn_ref_id: ${txnRefId} | Session: ${sessionId}`,
+      status: "REPORTED",
+      badge: "STATUS_SENT"
+    });
   } catch (err) {
-    console.warn("Prava status report notice:", err.message);
+    console.warn("[Prava] Status report warning:", err.message);
   }
 
   logCallback({
     id: `log_${Date.now()}_settled`,
-    time: timestamp,
+    time: new Date().toLocaleTimeString(),
     title: `Prava shop_checkout Order Placed (${orderId})`,
-    details: `Paid ₹${productPrice.toLocaleString('en-IN')} via Single-Use Visa Network Token (${mockToken.slice(-4)}) | Session: ${sessionId} | Merchant: ${merchant}`,
+    details: `Paid ₹${productPrice.toLocaleString('en-IN')} via Visa Network Token (****${realToken ? realToken.slice(-4) : '????'}) | Session: ${sessionId} | Merchant: ${merchant}`,
     status: "APPROVED",
-    responseId: responseId || `resp_${Math.random().toString(36).substr(2, 9)}`,
     badge: "PRAVA_SETTLED"
   });
 
@@ -132,11 +171,11 @@ export async function finalizeSnapFitCheckout(checkoutContext, logCallback = () 
     amountPaid: productPrice,
     sessionId,
     virtualCard: {
-      token: mockToken,
-      cvv: mockCvv,
-      expiry: `${lineItem.expiry_month || '12'}/${(lineItem.expiry_year || '2030').slice(-2)}`
+      token: realToken,
+      cvv: realCvv,
+      expiry: `${realExpiryMonth || '??'}/${(realExpiryYear || '????').slice(-2)}`
     },
-    pravaResponseId: responseId,
+    txnRefId,
     placedAt: new Date().toLocaleTimeString()
   };
 }

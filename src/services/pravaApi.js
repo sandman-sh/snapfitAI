@@ -3,6 +3,8 @@
  * Auto-detects environment:
  *   - Vercel deployment: uses /api/prava (serverless functions)
  *   - Local dev: uses http://localhost:3001/api/prava (Express proxy)
+ *
+ * All calls go through the server-side proxy — secret key never touches the browser.
  */
 
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -86,11 +88,11 @@ export async function createPravaSession({
 }
 
 /**
- * Poll for Payment Credentials
+ * Single poll for payment credentials (one-shot)
  */
 export async function pollPaymentResult(sessionId) {
   try {
-    const res = await fetch(`${PROXY_URL}/${sessionId}`);
+    const res = await fetch(`${PROXY_URL}/${sessionId}?_t=${Date.now()}`);
     const data = await res.json();
     return { success: res.ok, data };
   } catch (err) {
@@ -100,19 +102,118 @@ export async function pollPaymentResult(sessionId) {
 }
 
 /**
- * Report Outcome Back to Prava
+ * Poll for payment credentials until completed or failed.
+ * Resolves with the full payment-result response on completion.
+ * Rejects on timeout or terminal failure.
+ *
+ * @param {string} sessionId - The Prava session ID
+ * @param {Object} options
+ * @param {number} [options.maxAttempts=30] - Max poll attempts (30 × 3s = 90s)
+ * @param {number} [options.intervalMs=3000] - Interval between polls
+ * @param {function} [options.onPoll] - Called each poll with (data, attempt)
+ * @param {AbortSignal} [options.signal] - AbortController signal to cancel polling
+ * @returns {Promise<Object>} - Resolves with payment-result data
  */
-export async function reportPravaStatus(sessionId, txnRefId = null, status = "APPROVED") {
+export function pollUntilComplete(sessionId, {
+  maxAttempts = 30,
+  intervalMs = 3000,
+  onPoll = null,
+  signal = null,
+} = {}) {
+  return new Promise((resolve, reject) => {
+    let attempt = 0;
+    let timer = null;
+
+    const cleanup = () => {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    };
+
+    // Handle abort signal
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        cleanup();
+        reject(new Error('Polling cancelled'));
+      }, { once: true });
+    }
+
+    const doPoll = async () => {
+      if (signal?.aborted) return;
+
+      attempt++;
+      try {
+        const res = await pollPaymentResult(sessionId);
+
+        if (signal?.aborted) return;
+
+        if (res.success && res.data) {
+          const status = res.data.status;
+
+          // Report progress
+          if (onPoll) {
+            onPoll(res.data, attempt);
+          }
+
+          if (status === 'completed') {
+            cleanup();
+            resolve(res.data);
+            return;
+          }
+
+          if (status === 'failed') {
+            cleanup();
+            const errMsg = res.data.transactions?.[0]?.error?.message || 'Payment failed';
+            reject(new Error(errMsg));
+            return;
+          }
+
+          // Still pending or awaiting_result — keep polling
+          console.log(`[Prava] Poll #${attempt}: status=${status}`);
+        }
+      } catch (err) {
+        // Transient network error — keep polling
+        console.warn(`[Prava] Poll #${attempt} network error:`, err.message);
+      }
+
+      if (attempt >= maxAttempts) {
+        cleanup();
+        reject(new Error(`Payment timed out after ${maxAttempts * intervalMs / 1000}s of polling`));
+        return;
+      }
+
+      timer = setTimeout(doPoll, intervalMs);
+    };
+
+    // Start first poll immediately
+    doPoll();
+  });
+}
+
+/**
+ * Report Outcome Back to Prava
+ * @param {string} sessionId - The Prava session ID
+ * @param {string} txnRefId - The real txn_ref_id from payment-result (REQUIRED)
+ * @param {string} status - 'APPROVED' or 'DECLINED'
+ */
+export async function reportPravaStatus(sessionId, txnRefId, status = "APPROVED") {
+  if (!txnRefId) {
+    console.warn("[Prava] reportPravaStatus called without txnRefId — skipping");
+    return { success: false, error: "Missing txn_ref_id" };
+  }
+
   try {
     const res = await fetch(`${PROXY_URL}/${sessionId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        txn_ref_id: txnRefId || `txref_${Date.now()}`,
+        txn_ref_id: txnRefId,
         txn_status: status,
       })
     });
     const data = await res.json();
+    console.log(`[Prava] Status reported: ${status} for txn ${txnRefId}`);
     return { success: res.ok, data };
   } catch (err) {
     console.warn("Prava report error:", err);
