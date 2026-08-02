@@ -136,8 +136,8 @@ export default function PravaCheckoutModal({ isOpen, onClose, product, selectedS
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      {/* Spacious Large Modal Window (max-w-3xl lg:max-w-4xl) */}
-      <div className="modal-content w-full max-w-3xl lg:max-w-4xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl rounded-3xl border border-violet-200 dark:border-violet-800">
+      {/* Spacious Extra Large Modal Window (max-w-4xl lg:max-w-5xl) */}
+      <div className="modal-content w-full max-w-4xl lg:max-w-5xl max-h-[95vh] flex flex-col overflow-hidden shadow-2xl rounded-3xl border border-violet-200 dark:border-violet-800">
 
         {/* Top Header */}
         <div className="h-1.5 bg-gradient-to-r from-amber-400 via-violet-600 to-indigo-600 flex-shrink-0" />
@@ -165,7 +165,7 @@ export default function PravaCheckoutModal({ isOpen, onClose, product, selectedS
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
             {/* Left Column: Product & Delivery Details */}
-            <div className="md:col-span-5 space-y-4 border-b md:border-b-0 md:border-r border-[var(--sf-border)] md:pr-6">
+            <div className="md:col-span-4 space-y-4 border-b md:border-b-0 md:border-r border-[var(--sf-border)] md:pr-6">
               
               {/* Product Preview Card */}
               <div className="p-4 rounded-2xl bg-[var(--sf-surface-alt)] border border-[var(--sf-border)] space-y-3">
@@ -209,7 +209,7 @@ export default function PravaCheckoutModal({ isOpen, onClose, product, selectedS
             </div>
 
             {/* Right Column: Prava Payment Vault & Transaction Form */}
-            <div className="md:col-span-7 space-y-4 flex flex-col justify-between">
+            <div className="md:col-span-8 space-y-4 flex flex-col justify-between">
 
               {/* Error Banner */}
               {cardError && (
@@ -251,7 +251,7 @@ export default function PravaCheckoutModal({ isOpen, onClose, product, selectedS
 
               {/* Step 3: Prava SDK Card Form */}
               {step === 'card-form' && checkoutCtx && (
-                <div className="space-y-3">
+                <div className="space-y-3 w-full">
                   <div className="p-3 rounded-xl bg-slate-900 text-slate-100 text-xs font-mono border border-slate-700 flex justify-between items-center">
                     <div>
                       <span className="block text-[10px] text-amber-400 font-bold tracking-wider">🔒 PRAVA CARD ENROLLMENT VAULT</span>
@@ -262,15 +262,15 @@ export default function PravaCheckoutModal({ isOpen, onClose, product, selectedS
                     </span>
                   </div>
 
-                  {/* Prava SDK Card Form Container (Spacious 420px height) */}
+                  {/* Prava SDK Card Form Container (Spacious 580px height x 100% width) */}
                   <div
                     ref={cardFormRef}
                     id="prava-card-form"
-                    className="w-full rounded-2xl overflow-hidden border-2 border-violet-400/50 bg-white shadow-inner"
-                    style={{ minHeight: '420px' }}
+                    className="w-full rounded-2xl overflow-hidden border-2 border-violet-400/50 bg-white shadow-inner flex flex-col justify-center items-center"
+                    style={{ minHeight: '580px', width: '100%' }}
                   >
                     {!cardFormReady && (
-                      <div className="flex flex-col items-center justify-center h-[420px] text-[var(--sf-text-muted)] text-xs gap-2">
+                      <div className="flex flex-col items-center justify-center h-[580px] text-[var(--sf-text-muted)] text-xs gap-2">
                         <RefreshCw className="w-6 h-6 animate-spin text-violet-600" />
                         <span>Loading Prava PCI-compliant card form...</span>
                       </div>

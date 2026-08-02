@@ -65,6 +65,21 @@ h1, h2, h3, h4, h5 {
   letter-spacing: -0.025em;
 }
 
+/* ─── Prava SDK Card Form & Visa VTS iFrame Sizing ──────────────── */
+#prava-card-form {
+  width: 100% !important;
+  min-height: 580px !important;
+}
+
+#prava-card-form iframe {
+  width: 100% !important;
+  min-width: 520px !important;
+  height: 580px !important;
+  min-height: 580px !important;
+  border: none !important;
+  border-radius: 1rem !important;
+}
+
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--sf-violet); border-radius: 10px; }
