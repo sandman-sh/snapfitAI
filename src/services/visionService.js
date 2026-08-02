@@ -12,6 +12,14 @@ const INR_PRICE_BANDS = {
   Apparel: 4999,
 };
 
+const MARKETPLACE_SEARCH_TARGETS = [
+  { label: "Google Shopping", merchantDomain: "google.com/shopping" },
+  { label: "Myntra Search", merchantDomain: "myntra.com" },
+  { label: "AJIO Search", merchantDomain: "ajio.com" },
+  { label: "Amazon Fashion", merchantDomain: "amazon.in" },
+  { label: "Flipkart Fashion", merchantDomain: "flipkart.com" },
+];
+
 const OUTFIT_SCHEMA = {
   type: "object",
   additionalProperties: false,
@@ -178,15 +186,12 @@ function createWebDiscoveredProduct(vision, garmentCutoutUrl) {
 }
 
 function createBuyOptions(vision, catalogMatches) {
+  const query = buildSearchQuery(vision);
   const aiOptions = (vision.buyOptions || []).map((option) => ({
     label: option.label || vision.detectedItem,
     merchantDomain: sanitizeMerchantDomain(option.merchantDomain) || vision.merchantDomain,
     estimatedPrice: Math.round(Number(option.estimatedPrice) || vision.estimatedPrice),
-    url: buildShoppingSearchUrl({
-      ...vision,
-      detectedItem: option.label || vision.detectedItem,
-      merchantDomain: option.merchantDomain || vision.merchantDomain,
-    }),
+    url: buildMerchantSearchUrl(option.merchantDomain || vision.merchantDomain, option.label || query),
   }));
 
   const localOptions = catalogMatches.slice(0, 3).map((product) => ({
@@ -194,14 +199,17 @@ function createBuyOptions(vision, catalogMatches) {
     merchantDomain: product.merchantDomain,
     estimatedPrice: product.price,
     productId: product.id,
-    url: buildShoppingSearchUrl({
-      ...vision,
-      detectedItem: product.name,
-      merchantDomain: product.merchantDomain,
-    }),
+    url: buildMerchantSearchUrl(product.merchantDomain, product.name),
   }));
 
-  return [...aiOptions, ...localOptions].slice(0, 4);
+  const marketplaceOptions = MARKETPLACE_SEARCH_TARGETS.map((target) => ({
+    label: target.label,
+    merchantDomain: target.merchantDomain,
+    estimatedPrice: vision.estimatedPrice,
+    url: buildMerchantSearchUrl(target.merchantDomain, query),
+  }));
+
+  return dedupeBuyOptions([...aiOptions, ...localOptions, ...marketplaceOptions]).slice(0, 5);
 }
 
 function findMatchingProducts(vision) {
@@ -261,14 +269,39 @@ function sanitizeMerchantDomain(domain) {
 }
 
 function buildShoppingSearchUrl(vision) {
-  const query = encodeURIComponent([
+  return buildMerchantSearchUrl("google.com/shopping", buildSearchQuery(vision));
+}
+
+function buildSearchQuery(vision) {
+  return [
     vision.detectedItem,
     vision.colorPattern,
     vision.brandMatch,
     "buy online India",
-  ].filter(Boolean).join(" "));
+  ].filter(Boolean).join(" ");
+}
 
-  return `https://www.google.com/search?tbm=shop&q=${query}`;
+function buildMerchantSearchUrl(domain, query) {
+  const cleanDomain = sanitizeMerchantDomain(domain);
+  const encodedQuery = encodeURIComponent(query);
+
+  if (cleanDomain.includes("myntra.com")) return `https://www.myntra.com/${encodedQuery}`;
+  if (cleanDomain.includes("ajio.com")) return `https://www.ajio.com/search/?text=${encodedQuery}`;
+  if (cleanDomain.includes("amazon.in")) return `https://www.amazon.in/s?k=${encodedQuery}&i=fashion`;
+  if (cleanDomain.includes("flipkart.com")) return `https://www.flipkart.com/search?q=${encodedQuery}`;
+  if (cleanDomain.includes("google.com")) return `https://www.google.com/search?tbm=shop&q=${encodedQuery}`;
+
+  return `https://www.google.com/search?tbm=shop&q=${encodedQuery}+site%3A${encodeURIComponent(cleanDomain)}`;
+}
+
+function dedupeBuyOptions(options) {
+  const seen = new Set();
+  return options.filter((option) => {
+    const key = `${option.merchantDomain}-${option.label}`.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function buildDefaultKeywords(name, category, colorPattern) {

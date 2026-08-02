@@ -41,7 +41,7 @@ export default function ProductCatalog({ products, visionData, onSelectProduct, 
         <div className="p-5 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-lg animate-fade-up border border-violet-400/30">
           <div>
             <div className="flex items-center gap-2 text-amber-300 text-xs font-mono font-bold uppercase mb-1">
-              <Zap className="w-4 h-4" /> AI Cutout Vision Match
+              <Zap className="w-4 h-4" /> Outfit Match Summary
             </div>
             <h3 className="font-extrabold text-lg">{visionData.detectedItem}</h3>
             <p className="text-violet-200 text-xs mt-0.5">{visionData.colorPattern} · {visionData.fabricTexture}</p>
@@ -52,10 +52,10 @@ export default function ProductCatalog({ products, visionData, onSelectProduct, 
               onClick={onOpenMixMatchStudio}
               className="btn-gold py-2 px-4 text-xs flex items-center gap-1.5 shadow-md"
             >
-              <Sparkles className="w-4 h-4 text-violet-950" /> Mix & Match Studio
+              <Sparkles className="w-4 h-4 text-violet-950" /> Try-On Studio
             </button>
             <span className="px-4 py-2 rounded-xl bg-amber-400 text-violet-900 font-bold text-xs shadow-md whitespace-nowrap">
-              {filtered.length} Matches Found
+              {filtered.length} Shop Matches
             </span>
           </div>
         </div>
@@ -96,8 +96,8 @@ export default function ProductCatalog({ products, visionData, onSelectProduct, 
           <div className="flex bg-[var(--sf-surface-alt)] p-1 rounded-xl gap-0.5 text-[12px] font-bold">
             {[
               { key: 'all', label: `All (${products.length})` },
-              { key: 'exact', label: 'Exact Match', icon: Crown },
-              { key: 'budget', label: 'Budget Lookalike', icon: Flame },
+              { key: 'exact', label: 'Closest Matches', icon: Crown },
+              { key: 'budget', label: 'Budget Finds', icon: Flame },
             ].map(f => (
               <button key={f.key} onClick={() => setFilterType(f.key)}
                 className={`flex items-center gap-1 px-3.5 py-2 rounded-lg transition-all duration-200 ${
@@ -166,10 +166,10 @@ export default function ProductCatalog({ products, visionData, onSelectProduct, 
                 <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
                   {prod.isWebDiscovered ? (
                     <span className="badge bg-gradient-to-r from-amber-400 to-amber-500 text-violet-950 font-extrabold text-[10px] flex items-center gap-1 shadow-md">
-                      <Sparkles className="w-3 h-3 text-violet-950" /> AI Web Match
+                      <Sparkles className="w-3 h-3 text-violet-950" /> Visual Match
                     </span>
                   ) : prod.type === 'exact_match' ? (
-                    <span className="badge badge-exact text-[10px] flex items-center gap-1"><Crown className="w-3 h-3 text-violet-600" /> Exact</span>
+                    <span className="badge badge-exact text-[10px] flex items-center gap-1"><Crown className="w-3 h-3 text-violet-600" /> Match</span>
                   ) : (
                     <span className="badge badge-lookalike text-[10px] flex items-center gap-1"><Flame className="w-3 h-3 text-amber-600" /> Lookalike</span>
                   )}
@@ -181,7 +181,7 @@ export default function ProductCatalog({ products, visionData, onSelectProduct, 
 
               <div className="p-3 lg:p-4 flex-1 flex flex-col justify-between gap-2">
                 <div>
-                  <p className="text-[11px] font-bold text-violet-600 font-mono">{prod.brand || 'PRĀVA LUXE'}</p>
+                  <p className="text-[11px] font-bold text-violet-600 font-mono">{prod.brand || 'PRAVA LUXE'}</p>
                   <h4 className="font-bold text-sm text-[var(--sf-text)] line-clamp-1 mt-0.5">{prod.name || prod.title}</h4>
                   <div className="flex items-center gap-1.5 mt-1.5">
                     <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-700 text-white rounded text-[10px] font-bold font-mono">
@@ -211,4 +211,3 @@ export default function ProductCatalog({ products, visionData, onSelectProduct, 
     </section>
   );
 }
-

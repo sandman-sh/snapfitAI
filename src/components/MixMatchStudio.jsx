@@ -238,7 +238,7 @@ export default function MixMatchStudio({ isOpen, onClose, initialCutout, product
               <div className="w-full flex flex-wrap justify-between items-center gap-2 px-4 pt-3 pb-2 z-20">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="badge badge-prava text-[10px] uppercase tracking-wider flex items-center gap-1">
-                    <Zap className="w-3 h-3 text-amber-400" /> GPT 5.6 SOL AR
+                    <Zap className="w-3 h-3 text-amber-400" /> AI Try-On
                   </span>
                   {tryOnResult && (
                     <span className="text-[11px] text-emerald-400 font-mono font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
@@ -291,7 +291,7 @@ export default function MixMatchStudio({ isOpen, onClose, initialCutout, product
                       <RefreshCw className="w-14 h-14 text-amber-400 animate-spin" />
                     </div>
                     <p className="font-extrabold text-sm">Fitting {selectedGarment?.name || 'style'} onto model...</p>
-                    <p className="text-violet-300 text-[11px] font-mono">Removing background · Aligning to body · Rendering</p>
+                    <p className="text-violet-300 text-[11px] font-mono">Aligning garment, lighting, and fit</p>
                     {/* Show which garment is being fitted */}
                     {selectedGarment && (
                       <div className="flex items-center gap-3 mt-2 bg-slate-900/60 rounded-xl p-2 border border-slate-700">

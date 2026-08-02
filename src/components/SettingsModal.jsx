@@ -79,7 +79,7 @@ export default function SettingsModal({ isOpen, onClose }) {
           <div>
             <label className="block text-[10px] font-['JetBrains_Mono'] text-[var(--bh-text-subtle)] uppercase tracking-wider mb-2 font-semibold flex items-center justify-between">
               <span>OpenAI API Key</span>
-              <span className="text-[#D42C2C] text-[9px]">GPT 5.6 SOL Powered</span>
+              <span className="text-[#D42C2C] text-[9px]">Vision + Image AI</span>
             </label>
             <input
               type="password"
@@ -89,7 +89,7 @@ export default function SettingsModal({ isOpen, onClose }) {
               className="bh-input"
             />
             <p className="text-[10px] font-['JetBrains_Mono'] text-[var(--bh-text-subtle)] mt-1.5 font-medium">
-              Used to run live GPT 5.6 SOL AI optimization scans.
+              Used for live outfit isolation, visual matching, and try-on generation.
             </p>
           </div>
 

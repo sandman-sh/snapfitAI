@@ -69,6 +69,19 @@ export default function VisualSearchHero({ onVisionScanResult, onBuyWithPrava, o
   const runScan = async (img) => {
     setIsScanning(true);
     setScanStep('analyzing');
+    const matchPromise = analyzeOutfitImage(img);
+    matchPromise
+      .then((fastRes) => {
+        if (!fastRes?.success) return;
+        setActiveVisionData(fastRes.visionData);
+        setMatchedResults(fastRes.matchedProducts || []);
+        setWebMatchProduct(fastRes.webDiscoveredProduct);
+
+        if (fastRes.webDiscoveredProduct && onAddNewProductToCatalog) {
+          onAddNewProductToCatalog(fastRes.webDiscoveredProduct);
+        }
+      })
+      .catch((err) => console.warn("Fast outfit web match failed:", err.message));
     
     // Step 1: GPT 5.6 SOL Vision analyzes person photo → GPT-IMAGE-1 generates clean dress product shot
     setScanStep('removing');
@@ -82,7 +95,8 @@ export default function VisualSearchHero({ onVisionScanResult, onBuyWithPrava, o
 
     // Step 3: GPT 5.6 SOL Vision Web Search → Discover exact match dress over internet
     setScanStep('matching');
-    const res = await analyzeOutfitImage(img, pngCutout);
+    const initialRes = await matchPromise;
+    const res = withCutoutResult(initialRes, pngCutout);
     setIsScanning(false);
     setScanStep(null);
 
@@ -109,6 +123,21 @@ export default function VisualSearchHero({ onVisionScanResult, onBuyWithPrava, o
 
   const handleSliceClick = (slice) => {
     setSelectedSliceId(slice.id);
+  };
+
+  const withCutoutResult = (res, pngCutout) => {
+    if (!res?.success || !pngCutout || !res.webDiscoveredProduct) return res;
+
+    const product = {
+      ...res.webDiscoveredProduct,
+      imageUrl: pngCutout,
+    };
+
+    return {
+      ...res,
+      webDiscoveredProduct: product,
+      matchedProducts: [product, ...(res.matchedProducts || []).filter((p) => p.id !== product.id)],
+    };
   };
 
   const resetScanner = () => {
@@ -313,7 +342,7 @@ export default function VisualSearchHero({ onVisionScanResult, onBuyWithPrava, o
         </div>
 
         {/* Web Discovered Exact Match Dress Card Row */}
-        {webMatchProduct && !isScanning && (
+        {webMatchProduct && (
           <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border-2 border-amber-400/60 space-y-5 animate-fade-up shadow-2xl">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/20 pb-4">
               <div>
@@ -368,7 +397,7 @@ export default function VisualSearchHero({ onVisionScanResult, onBuyWithPrava, o
 
                 {activeVisionData?.buyOptions?.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {activeVisionData.buyOptions.slice(0, 4).map((option, index) => (
+                    {activeVisionData.buyOptions.slice(0, 5).map((option, index) => (
                       <a
                         key={`${option.label}-${index}`}
                         href={option.url || activeVisionData.buySearchUrl || webMatchProduct.purchaseUrl}
@@ -407,7 +436,7 @@ export default function VisualSearchHero({ onVisionScanResult, onBuyWithPrava, o
                     rel="noreferrer"
                     className="btn-primary bg-white/20 hover:bg-white/30 border border-white/30 py-3 px-5 text-xs font-bold flex items-center gap-2"
                   >
-                    <ExternalLink className="w-4 h-4 text-amber-300" /> Find Online
+                    <ExternalLink className="w-4 h-4 text-amber-300" /> Search Web
                   </a>
                 </div>
               </div>

@@ -71,7 +71,7 @@ export default function KiroChatbot({ visionData, onExecuteAction }) {
     {
       id: 'welcome',
       sender: 'kiro',
-      text: "Hi! I'm **KIRO**, your **Full-Control Agentic Shopping Assistant**! ⚡\n\nAsk me to **try on clothes**, **buy items with Prava**, **view mandates**, or **show order history**."
+      text: "Hi, I'm **KIRO**, your SnapFit shopping assistant.\n\nAsk me to **try on an item**, **open checkout with Prava**, **review saved controls**, or **show order history**."
     }
   ]);
   const [input, setInput] = useState('');
@@ -83,7 +83,7 @@ export default function KiroChatbot({ visionData, onExecuteAction }) {
       const styleTipMsg = {
         id: `style_tip_${Date.now()}`,
         sender: 'kiro',
-        text: `✨ **Styling Cutout:**\nScanned **${visionData.detectedItem}** (${visionData.colorPattern || 'Custom Tones'})!\n\nSay *"Try on ${visionData.detectedItem}"* to fit on model.`
+        text: `**Outfit match ready:**\nI found **${visionData.detectedItem}** (${visionData.colorPattern || 'custom tones'}).\n\nSay *"Try on ${visionData.detectedItem}"* to preview it in the studio.`
       };
       setMessages((prev) => [...prev, styleTipMsg]);
     }
@@ -119,10 +119,10 @@ export default function KiroChatbot({ visionData, onExecuteAction }) {
   };
 
   const quickPrompts = [
-    { label: '👕 Try On Leather Jacket', text: 'Try on the leather jacket on full body model' },
-    { label: '💳 Buy Floral Dress', text: 'Buy the floral wrap dress with Prava' },
-    { label: '⚙️ Prava Mandates', text: 'Open my Prava Mandates Manager' },
-    { label: '📜 Order History', text: 'Show transaction ledger and orders' },
+    { label: 'Try on jacket', text: 'Try on the leather jacket on a full body model' },
+    { label: 'Buy with Prava', text: 'Buy the current outfit match with Prava' },
+    { label: 'Payment controls', text: 'Open my Prava payment controls' },
+    { label: 'Order history', text: 'Show transaction ledger and orders' },
   ];
 
   return (
@@ -142,7 +142,7 @@ export default function KiroChatbot({ visionData, onExecuteAction }) {
               <span className="font-extrabold text-sm tracking-tight">KIRO</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white font-mono font-bold">AGENT</span>
             </div>
-            <span className="text-[11px] text-amber-200 font-medium">Full Control Assistant</span>
+            <span className="text-[11px] text-amber-200 font-medium">Shopping Copilot</span>
           </div>
           <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white animate-ping" />
           <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white" />
@@ -161,11 +161,11 @@ export default function KiroChatbot({ visionData, onExecuteAction }) {
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h3 className="font-extrabold text-base tracking-tight">KIRO Full Control</h3>
-                  <span className="text-[10px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full font-mono font-bold">GPT 5.6 SOL</span>
+                  <h3 className="font-extrabold text-base tracking-tight">KIRO Shopping Copilot</h3>
+                  <span className="text-[10px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full font-mono font-bold">OPENAI</span>
                 </div>
                 <p className="text-[11px] text-violet-200 font-mono flex items-center gap-1.5 mt-0.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Active Agent • App Controls On
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Ready to help with shopping actions
                 </p>
               </div>
             </div>
@@ -200,7 +200,7 @@ export default function KiroChatbot({ visionData, onExecuteAction }) {
             {isLoading && (
               <div className="flex items-center gap-2 text-violet-600 text-xs font-semibold p-2 bg-violet-50 dark:bg-violet-900/20 rounded-xl max-w-[200px] border border-violet-100">
                 <RefreshCw className="w-4 h-4 animate-spin text-amber-500" />
-                <span>KIRO Agent thinking...</span>
+                <span>KIRO is checking that...</span>
               </div>
             )}
             <div ref={chatEndRef} />
@@ -226,7 +226,7 @@ export default function KiroChatbot({ visionData, onExecuteAction }) {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSend()}
-              placeholder="Ask KIRO to try on, buy, or control app..."
+              placeholder="Ask KIRO to try on, compare, or checkout..."
               className="flex-1 px-4 py-2.5 rounded-xl bg-[var(--sf-surface-alt)] text-[var(--sf-text)] text-xs placeholder-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500 border border-[var(--sf-border)] font-medium"
             />
             <button
