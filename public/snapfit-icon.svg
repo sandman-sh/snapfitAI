@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="50%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#3B1D8E" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FCD34D" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded Squircle Background -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+
+  <!-- Camera Body Outer Ring -->
+  <circle cx="256" cy="256" r="160" stroke="url(#goldGrad)" stroke-width="20" fill="none" opacity="0.9" />
+
+  <!-- Camera Lens Outer Ring -->
+  <circle cx="256" cy="256" r="100" stroke="#FFFFFF" stroke-width="14" fill="none" opacity="0.7" />
+
+  <!-- Inner Shutter Lens -->
+  <circle cx="256" cy="256" r="48" fill="url(#goldGrad)" />
+
+  <!-- Top Flash Badge -->
+  <rect x="226" y="60" width="60" height="24" rx="12" fill="url(#goldGrad)" />
+
+  <!-- AI Sparkle Top Right -->
+  <path d="M 390 120 L 398 140 L 418 148 L 398 156 L 390 176 L 382 156 L 362 148 L 382 140 Z" fill="#FCD34D" />
+  <path d="M 120 370 L 125 382 L 137 387 L 125 392 L 120 404 L 115 392 L 103 387 L 115 382 Z" fill="#FCD34D" opacity="0.8" />
+</svg>
